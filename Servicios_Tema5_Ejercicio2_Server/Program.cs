@@ -13,11 +13,12 @@ namespace Servicios_Tema5_Ejercicio2_Server
     class Program
     {
         static string message;
+        static List<IPEndPoint> clients;
 
         static void Main(string[] args)
         {
             int puerto = 31416;
-            String ip;
+            clients = new List<IPEndPoint>();
             Thread thread;
 
             //IPEndPoint => Representa un punto de conexión de red como una dirección IP y un número de puerto.
@@ -53,9 +54,9 @@ namespace Servicios_Tema5_Ejercicio2_Server
         static void ClientThread(object socket)
         {
             Socket client = (Socket)socket;
-
             IPEndPoint ieClient = (IPEndPoint)client.RemoteEndPoint;
             Console.WriteLine("conectado al puerto {0}", ieClient.Port);
+            clients.Add(ieClient);
 
             using (NetworkStream ns = new NetworkStream(client))
             using (StreamReader sr = new StreamReader(ns))
