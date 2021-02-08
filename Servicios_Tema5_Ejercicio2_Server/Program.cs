@@ -13,12 +13,12 @@ namespace Servicios_Tema5_Ejercicio2_Server
     class Program
     {
         static string message;
-        static List<IPEndPoint> clients;
+        static object key = new Object();
+        static Client clientList;
 
         static void Main(string[] args)
         {
             int puerto = 31416;
-            clients = new List<IPEndPoint>();
             Thread thread;
 
             //IPEndPoint => Representa un punto de conexión de red como una dirección IP y un número de puerto.
@@ -53,10 +53,11 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
         static void ClientThread(object socket)
         {
+
             Socket client = (Socket)socket;
             IPEndPoint ieClient = (IPEndPoint)client.RemoteEndPoint;
             Console.WriteLine("conectado al puerto {0}", ieClient.Port);
-            clients.Add(ieClient);
+            clientList = new Client(client);
 
             using (NetworkStream ns = new NetworkStream(client))
             using (StreamReader sr = new StreamReader(ns))
@@ -65,22 +66,32 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 //mandamos al cliente un mensaje de bienvenida :)
                 sw.WriteLine("Wellcome, who are you");//你好， 你是谁?
                 sw.Flush();
-
-                try
+                
+                clientList.name = sr.ReadLine();
+                Console.WriteLine("El usuario conectado al puerto{0}, es {1}",ieClient.Port,clientList.name);
+                sw.WriteLine("Welcome {0}.", clientList.name);
+                sw.Flush();
+                while (true)
                 {
-                    message = sr.ReadLine();
-                    if (message != null)
+                    try
                     {
-                        sw.WriteLine(message);
-                        sw.Flush();
+                        message = sr.ReadLine();
+                        if (message != null)
+                        {
+                            sw.WriteLine(clientList.name + ": " + message);
+                            sw.Flush();
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        Console.WriteLine(e.Message);
                     }
                 }
-                catch (IOException e)
-                {
-                    Console.WriteLine(e.Message);
-                }
+                
 
             }
+
+
         }
     }
 }
