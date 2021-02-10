@@ -63,6 +63,8 @@ namespace Servicios_Tema5_Ejercicio2_Server
             clientList = new Client(client);
             allClietsOnServer.Add(clientList);
 
+            //meter esta zona en el cliente, darle una visual
+
             using (NetworkStream ns = new NetworkStream(client))
             using (StreamReader sr = new StreamReader(ns))
             using (StreamWriter sw = new StreamWriter(ns))
