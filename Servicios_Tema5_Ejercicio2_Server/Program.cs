@@ -12,11 +12,11 @@ namespace Servicios_Tema5_Ejercicio2_Server
 {
     class Program
     {
-        static string message;
+        
         static object key = new Object();
         static Client clientList;
         static List<Client> allClietsOnServer;
-        static string nameSpeaker;
+        static Message message;
 
         static void Main(string[] args)
         {
@@ -82,20 +82,19 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 {
                     try
                     {
-                        message = sr.ReadLine();
-                        nameSpeaker = clientList.name;
+                        message.message = sr.ReadLine();
+                        message.name = clientList.name;
 
                         if (message != null)
                         {
-                            Console.WriteLine("name writter {0}", nameSpeaker);
+                            Console.WriteLine("name writter {0}", message.name);
                             for (int i = 0; i < allClietsOnServer.Count; i++)
                             {
                                 using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].socket))
                                 using (StreamWriter swInside = new StreamWriter(nsInside))
                                 {
-                                    swInside.WriteLine(nameSpeaker + ": " + message);
+                                    swInside.WriteLine(message.name + ": " + message.message);
                                     swInside.Flush();
-                                    nameSpeaker = "";
                                 }
 
                             }
