@@ -16,15 +16,12 @@ namespace Servicios_Tema5_Ejercicio2_Server
         static object key = new Object();
 
         static List<Socket> allClietsOnServer;
-        static List<string> names;
-        static string message="";
 
         static void Main(string[] args)
         {
             int puerto = 31416;
             Thread thread;
             allClietsOnServer = new List<Socket>();
-            names = new List<string>();
 
             //IPEndPoint => Representa un punto de conexión de red como una dirección IP y un número de puerto.
             IPEndPoint ie = new IPEndPoint(IPAddress.Any, puerto);
@@ -57,15 +54,13 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
         static void ClientThread(object socket)
         {
-            string name;
+            string message;
+
             Socket client = (Socket)socket;
             IPEndPoint ieClient = (IPEndPoint)client.RemoteEndPoint;
             Console.WriteLine("conectado al puerto {0}", ieClient.Port);
 
-            allClietsOnServer.Add(client);
-
             //meter esta zona en el cliente, darle una visual
-
             using (NetworkStream ns = new NetworkStream(client))
             using (StreamReader sr = new StreamReader(ns))
             using (StreamWriter sw = new StreamWriter(ns))
@@ -75,39 +70,35 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 sw.WriteLine("Wellcome, who are you");//你好， 你是谁?
                 sw.Flush();
 
-                name = sr.ReadLine();
-                lock (key)
-                {
-                    names.Add(name);
-                }
+                Client clien = new Client(client, sr.ReadLine());
+                allClietsOnServer.Add(client);
 
-
-                Console.WriteLine("the user conect to port{0}, is {1}", ieClient.Port, name);
-                sw.WriteLine("Welcome {0}.", name);
+                Console.WriteLine("the user conect to port{0}, is {1}", ieClient.Port, clien.Name);
+                sw.WriteLine("Welcome {0}.", clien.Name);
                 sw.Flush();
 
                 while (true)
                 {
                     try
                     {
-                        lock (key)
-                        {
-                            message = sr.ReadLine(); //protegemos la variable común
-                        }
-
+                        
+                         message = sr.ReadLine(); //protegemos la variable común
+                        
                         if (message != null)
                         {
-                            for (int i = 0; i < allClietsOnServer.Count; i++)
+                            lock (key)
                             {
-                                using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i]))
-                                using (StreamWriter swInside = new StreamWriter(nsInside))
+                                for (int i = 0; i < allClietsOnServer.Count; i++)
                                 {
-                                    swInside.WriteLine( "nombre : " + message);
-                                    swInside.Flush();
+                                    using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i]))
+                                    using (StreamWriter swInside = new StreamWriter(nsInside))
+                                    {
+                                        swInside.WriteLine("{0}:{1} ",clien.Name,message);
+                                        swInside.Flush();
+                                    }
+
                                 }
-
-                            }
-
+                            } 
                         }
                     }
                     catch (IOException e)
