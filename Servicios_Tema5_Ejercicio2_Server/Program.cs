@@ -15,13 +15,13 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
         static object key = new Object();
 
-        static List<Socket> allClietsOnServer;
+        static List<Client> allClietsOnServer;
 
         static void Main(string[] args)
         {
             int puerto = 31416;
             Thread thread;
-            allClietsOnServer = new List<Socket>();
+            allClietsOnServer = new List<Client>();
 
             //IPEndPoint => Representa un punto de conexión de red como una dirección IP y un número de puerto.
             IPEndPoint ie = new IPEndPoint(IPAddress.Any, puerto);
@@ -71,7 +71,10 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 sw.Flush();
 
                 Client clien = new Client(client, sr.ReadLine());
-                allClietsOnServer.Add(client);
+                lock (key)
+                {
+                    allClietsOnServer.Add(clien);
+                }
 
                 Console.WriteLine("the user conect to port{0}, is {1}", ieClient.Port, clien.Name);
                 sw.WriteLine("Welcome {0}.", clien.Name);
@@ -90,7 +93,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
                             {
                                 for (int i = 0; i < allClietsOnServer.Count; i++)
                                 {
-                                    using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i]))
+                                    using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
                                     using (StreamWriter swInside = new StreamWriter(nsInside))
                                     {
                                         swInside.WriteLine("{0}:{1} ",clien.Name,message);
