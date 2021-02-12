@@ -14,7 +14,16 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
         public Client(Socket socket, string name)
         {
-            this.Name = name;
+
+            if(name.Length == 0)
+            {
+                this.Name = "Desconocido";
+            }
+            else
+            {
+                this.Name = name;
+            }
+
             this.SocketClient = socket;
         }
     }
