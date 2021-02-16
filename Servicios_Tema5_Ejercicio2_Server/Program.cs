@@ -84,16 +84,26 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 {
                     try
                     {
-                        
-                         message = sr.ReadLine(); //protegemos la variable común
-                        
+
+                        message = sr.ReadLine();
+                        Console.WriteLine(message.Substring(0, 1));
+                        if(message.Substring(0,1) == "#")
+                        {
+                            if (message == "#LIST")
+                            {
+                                sw.WriteLine("Lista de personas conectadas al servidor");
+                                sw.Flush();
+                            }
+                            Commands(message,client);
+                        }
+
                         if (message != null)
                         {
                             lock (key)
                             {
                                 for (int i = 0; i < allClietsOnServer.Count; i++)
                                 {
-                                    if(client != allClietsOnServer[i].SocketClient)
+                                    if (client != allClietsOnServer[i].SocketClient)
                                     {
                                         //Solo mandará el mensaje a los otros usuarios
                                         using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
@@ -103,9 +113,9 @@ namespace Servicios_Tema5_Ejercicio2_Server
                                             swInside.Flush();
                                         }
                                     }
-                                   
+
                                 }
-                            } 
+                            }
                         }
                     }
                     catch (IOException e)
@@ -115,6 +125,38 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
                 }
 
+            }
+        }
+
+        
+        static void Commands(string texto, Socket cliente)
+        {
+            //¿¿??
+            Socket socket = cliente;
+            switch (texto)
+            {
+                case "#LIST":
+
+                    lock (key)
+                    {
+                        Console.WriteLine(allClietsOnServer.Count);
+                        for (int i = 0; i < allClietsOnServer.Count; i++)
+                        {
+                            using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                            using (StreamWriter swInside = new StreamWriter(nsInside))
+                            {
+                                swInside.WriteLine("Persona: "+allClietsOnServer[i].Name);
+                                swInside.Flush();
+                            }
+
+                        }
+                    }
+                    break;
+                case "EXIT":
+                    socket.Close();
+                    break;
+                default:
+                    break;
             }
         }
     }
