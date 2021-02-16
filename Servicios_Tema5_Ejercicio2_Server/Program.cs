@@ -93,13 +93,17 @@ namespace Servicios_Tema5_Ejercicio2_Server
                             {
                                 for (int i = 0; i < allClietsOnServer.Count; i++)
                                 {
-                                    using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
-                                    using (StreamWriter swInside = new StreamWriter(nsInside))
+                                    if(client != allClietsOnServer[i].SocketClient)
                                     {
-                                        swInside.WriteLine("{0}:{1} ",clien.Name,message);
-                                        swInside.Flush();
+                                        //Solo mandará el mensaje a los otros usuarios
+                                        using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                                        using (StreamWriter swInside = new StreamWriter(nsInside))
+                                        {
+                                            swInside.WriteLine("{0}:{1} ", clien.Name, message);
+                                            swInside.Flush();
+                                        }
                                     }
-
+                                   
                                 }
                             } 
                         }
