@@ -69,7 +69,6 @@ namespace Servicios_Tema5_Ejercicio2_Server
             using (StreamWriter sw = new StreamWriter(ns))
             {
 
-                //mandamos al cliente un mensaje de bienvenida :) ¿Es un elemento común?
                 sw.WriteLine("Wellcome, who are you");//你好， 你是谁?
                 sw.Flush();
 
