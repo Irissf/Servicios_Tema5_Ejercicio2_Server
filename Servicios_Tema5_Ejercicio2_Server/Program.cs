@@ -22,6 +22,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
             int puerto = 31416;
             Thread thread;
             allClietsOnServer = new List<Client>();
+            IPHostEntry info = Dns.GetHostEntry("localhost");
 
             //IPEndPoint => Representa un punto de conexión de red como una dirección IP y un número de puerto.
             IPEndPoint ie = new IPEndPoint(IPAddress.Any, puerto);
@@ -54,6 +55,8 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
         static void ClientThread(object socket)
         {
+
+            bool exit = false;
             string message;
 
             Socket client = (Socket)socket;
@@ -71,6 +74,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 sw.Flush();
 
                 Client clien = new Client(client, sr.ReadLine());
+
                 lock (key)
                 {
                     allClietsOnServer.Add(clien);
@@ -80,43 +84,97 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 sw.WriteLine("Welcome {0}.", clien.Name);
                 sw.Flush();
 
-                while (true)
+                lock (key) //avisamos que alguien se ha conectado al resto de clientes
+                {
+                    for (int i = 0; i < allClietsOnServer.Count; i++)
+                    {
+                        if (client != allClietsOnServer[i].SocketClient)
+                        {
+                            //Solo mandará el mensaje a los otros usuarios
+                            using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                            using (StreamWriter swInside = new StreamWriter(nsInside))
+                            {
+                                swInside.WriteLine("{0} se ha conectado", clien.Name);
+                                swInside.Flush();
+                            }
+                        }
+
+                    }
+                }
+
+                while (!exit)
                 {
                     try
                     {
 
                         message = sr.ReadLine();
-                        Console.WriteLine(message.Substring(0, 1));
-                        if(message.Substring(0,1) == "#")
-                        {
-                            if (message == "#LIST")
-                            {
-                                sw.WriteLine("Lista de personas conectadas al servidor");
-                                sw.Flush();
-                            }
-                            Commands(message,client);
-                        }
 
-                        if (message != null)
+                        if (message == "#LIST")
+                        {
+                            sw.WriteLine("Lista de personas conectadas al servidor");
+                            sw.Flush();
+                            lock (key)
+                            {
+                                for (int i = 0; i < allClietsOnServer.Count; i++)
+                                {
+                                    sw.WriteLine(allClietsOnServer[i].Name);
+                                    sw.Flush();
+                                }
+                            }
+                            
+                        }else if(message == "#EXIT")
                         {
                             lock (key)
                             {
                                 for (int i = 0; i < allClietsOnServer.Count; i++)
                                 {
-                                    if (client != allClietsOnServer[i].SocketClient)
+                                    if (allClietsOnServer[i].SocketClient == client)
                                     {
-                                        //Solo mandará el mensaje a los otros usuarios
-                                        using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
-                                        using (StreamWriter swInside = new StreamWriter(nsInside))
-                                        {
-                                            swInside.WriteLine("{0}:{1} ", clien.Name, message);
-                                            swInside.Flush();
-                                        }
+                                        allClietsOnServer.RemoveAt(i);
                                     }
+                                }
+                                for (int i = 0; i < allClietsOnServer.Count; i++)
+                                {
+                                    using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                                    using (StreamWriter swInside = new StreamWriter(nsInside))
+                                    {
+                                        swInside.WriteLine("{0} se ha desconectado ", clien.Name);
+                                        swInside.Flush();
+                                    }
+                                }
+                            }
+                            
+                            Console.WriteLine("El cliente se ha desconectado");
+                            exit = true;
+                            client.Close();
+                        }
+                        else
+                        {
+                            if (message != null)
+                            {
+                                lock (key)
+                                {
+                                    for (int i = 0; i < allClietsOnServer.Count; i++)
+                                    {
+                                        if (client != allClietsOnServer[i].SocketClient)
+                                        {
+                                            //Solo mandará el mensaje a los otros usuarios
+                                            using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                                            using (StreamWriter swInside = new StreamWriter(nsInside))
+                                            {
+                                                swInside.WriteLine("{0}@{1}:{2} ", clien.Name, clien.ForIp.Address, message);
+                                                swInside.Flush();
+                                            }
+                                        }
 
+                                    }
                                 }
                             }
                         }
+
+
+
+                        
                     }
                     catch (IOException e)
                     {
@@ -128,36 +186,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
             }
         }
 
-        
-        static void Commands(string texto, Socket cliente)
-        {
-            //¿¿??
-            Socket socket = cliente;
-            switch (texto)
-            {
-                case "#LIST":
 
-                    lock (key)
-                    {
-                        Console.WriteLine(allClietsOnServer.Count);
-                        for (int i = 0; i < allClietsOnServer.Count; i++)
-                        {
-                            using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
-                            using (StreamWriter swInside = new StreamWriter(nsInside))
-                            {
-                                swInside.WriteLine("Persona: "+allClietsOnServer[i].Name);
-                                swInside.Flush();
-                            }
 
-                        }
-                    }
-                    break;
-                case "EXIT":
-                    socket.Close();
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 }
