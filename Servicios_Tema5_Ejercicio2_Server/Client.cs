@@ -10,22 +10,28 @@ namespace Servicios_Tema5_Ejercicio2_Server
 {
     class Client
     {
-        public string Name { set; get; }
+        private string name;
+        public string Name
+        {
+            set
+            {
+                
+                name = value;
+                
+            }
+            get
+            {
+                return name;
+            }
+        }
         public Socket SocketClient { set; get; }
         public IPEndPoint ForIp { set; get; }
         
 
-        public Client(Socket socket, string name)
+        public Client(Socket socket)
         {
 
-            if(name.Length == 0)
-            {
-                this.Name = "Desconocido";
-            }
-            else
-            {
-                this.Name = name;
-            }
+            
 
             this.SocketClient = socket;
             this.ForIp = (IPEndPoint)this.SocketClient.RemoteEndPoint;

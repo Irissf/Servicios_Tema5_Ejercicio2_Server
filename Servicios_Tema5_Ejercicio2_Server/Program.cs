@@ -40,8 +40,11 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 while (true)
                 {
                     Socket client = socket.Accept();
+                    Client clien = new Client(client);//creo al cliente
+                    allClietsOnServer.Add(clien);//lo meto en la colección
+
                     thread = new Thread(ClientThread);
-                    thread.Start(client);
+                    thread.Start(clien);//lanzamos el hilo del cliente y le paso el cliente
                 }
 
             }
@@ -58,8 +61,9 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
             bool exit = false;
             string message;
+            Client clientObject = (Client)socket;
 
-            Socket client = (Socket)socket;
+            Socket client = clientObject.SocketClient;
             IPEndPoint ieClient = (IPEndPoint)client.RemoteEndPoint;
             Console.WriteLine("conectado al puerto {0}", ieClient.Port);
 
@@ -70,17 +74,8 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
                 sw.WriteLine("Wellcome, who are you");
                 sw.Flush();
-
-                Client clien = new Client(client, sr.ReadLine());
-
-                lock (key)
-                {
-                    allClietsOnServer.Add(clien);
-                }
-
-                Console.WriteLine("the user conect to port{0}, is {1}", ieClient.Port, clien.Name);
-                sw.WriteLine("Welcome {0}.", clien.Name);
-                sw.Flush();
+                string name = sr.ReadLine();
+                clientObject.Name = name; //meto el nombre del cliente
 
                 lock (key) //avisamos que alguien se ha conectado al resto de clientes
                 {
@@ -92,7 +87,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
                             using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
                             using (StreamWriter swInside = new StreamWriter(nsInside))
                             {
-                                swInside.WriteLine("{0} se ha conectado", clien.Name);
+                                swInside.WriteLine("{0} se ha conectado", name);
                                 swInside.Flush();
                             }
                         }
@@ -114,16 +109,17 @@ namespace Servicios_Tema5_Ejercicio2_Server
                                 case "#EXIT":
                                 case "#exit":
                                 case "#Exit":
-                                    allClietsOnServer.Remove(clien);
+                                    allClietsOnServer.Remove(clientObject);
                                     for (int i = 0; i < allClietsOnServer.Count; i++)
                                     {
                                         using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
                                         using (StreamWriter swInside = new StreamWriter(nsInside))
                                         {
-                                            swInside.WriteLine("{0} se ha desconectado ", clien.Name);
+                                            swInside.WriteLine("{0} se ha desconectado ", clientObject.Name);
                                             swInside.Flush();
                                         }
                                     }
+                                    exit = true;
                                     break;
                                 case "#LIST":
                                 case "#list":
@@ -150,7 +146,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
                                                 using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
                                                 using (StreamWriter swInside = new StreamWriter(nsInside))
                                                 {
-                                                    swInside.WriteLine("{0}@{1}:{2} ", clien.Name, clien.ForIp.Address, message);
+                                                    swInside.WriteLine("{0}@{1}:{2} ", clientObject.Name, clientObject.ForIp.Address, message);
                                                     swInside.Flush();
                                                 }
                                             }
@@ -168,12 +164,11 @@ namespace Servicios_Tema5_Ejercicio2_Server
                                 using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
                                 using (StreamWriter swInside = new StreamWriter(nsInside))
                                 {
-                                    swInside.WriteLine("{0} se ha desconectado ", clien.Name);
+                                    swInside.WriteLine("{0} se ha desconectado ", clientObject.Name);
                                     swInside.Flush();
                                 }
                             }
-                            exit = true;
-                            client.Close();
+                            
                             exit = true;
                             client.Close();
 
@@ -187,6 +182,12 @@ namespace Servicios_Tema5_Ejercicio2_Server
 
                 }
 
+                lock (key) // eliminar de la colección de clientes
+                {
+                    exit = true;
+                    client.Close();
+                    allClietsOnServer.Remove(clientObject);
+                }
             }
         }
 
