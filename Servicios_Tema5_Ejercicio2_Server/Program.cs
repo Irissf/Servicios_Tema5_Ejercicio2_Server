@@ -41,8 +41,10 @@ namespace Servicios_Tema5_Ejercicio2_Server
                 {
                     Socket client = socket.Accept();
                     Client clien = new Client(client);//creo al cliente
-                    allClietsOnServer.Add(clien);//lo meto en la colección
-
+                    lock (key)
+                    {
+                        allClietsOnServer.Add(clien);//lo meto en la colección
+                    }
                     thread = new Thread(ClientThread);
                     thread.Start(clien);//lanzamos el hilo del cliente y le paso el cliente
                 }
@@ -101,7 +103,7 @@ namespace Servicios_Tema5_Ejercicio2_Server
                     {
 
                         message = sr.ReadLine();
-
+                        //mejor hacer un toUpper al mensaje de esa forma no hacemos tantos case
                         if (message != null)
                         {
                             switch (message)
@@ -109,14 +111,17 @@ namespace Servicios_Tema5_Ejercicio2_Server
                                 case "#EXIT":
                                 case "#exit":
                                 case "#Exit":
-                                    allClietsOnServer.Remove(clientObject);
-                                    for (int i = 0; i < allClietsOnServer.Count; i++)
+                                    lock (key)
                                     {
-                                        using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
-                                        using (StreamWriter swInside = new StreamWriter(nsInside))
+                                        allClietsOnServer.Remove(clientObject);
+                                        for (int i = 0; i < allClietsOnServer.Count; i++)
                                         {
-                                            swInside.WriteLine("{0} se ha desconectado ", clientObject.Name);
-                                            swInside.Flush();
+                                            using (NetworkStream nsInside = new NetworkStream(allClietsOnServer[i].SocketClient))
+                                            using (StreamWriter swInside = new StreamWriter(nsInside))
+                                            {
+                                                swInside.WriteLine("{0} se ha desconectado ", clientObject.Name);
+                                                swInside.Flush();
+                                            }
                                         }
                                     }
                                     exit = true;
